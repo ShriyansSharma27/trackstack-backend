@@ -17,7 +17,7 @@ app.use(session({
 }));
 
 app.use("/", require(path.join(__dirname, 'router', 'auth_routes.js')));
-
+app.use("/", authenticate, require(path.join(__dirname, 'router', 'api_routes.js')));
     
 
 app.listen(port, () => {console.log(`Listening...`)});
