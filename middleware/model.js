@@ -1,4 +1,5 @@
-const { DataTypes } = require("sequelize");
+const { Sequelize, DataTypes } = require("sequelize");
+const path = require('path');
 
 const defineInventory = (sequelize) => {
     return sequelize.define('Inventory', {     
@@ -7,8 +8,16 @@ const defineInventory = (sequelize) => {
         price: DataTypes.DECIMAL,
         SKU: DataTypes.STRING,
         stock: DataTypes.INTEGER
-        
-    })
+    });
 }
 
-module.exports = {defineInventory};
+const connectDb = async(req) => {
+    const connect_to_db = new Sequelize({
+        dialect: 'sqlite',
+        storage: path.join(__dirname, '..', `/databases/${req.params.user}.db`)
+    });
+    await connect_to_db.authenticate();
+    return connect_to_db;
+}
+
+module.exports = {defineInventory, connectDb};

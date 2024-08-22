@@ -50,6 +50,8 @@ router.post("/signup", async(req,res) => {
     try {
         const hshed_pwd = await bcrypt.hash(password,10);
         await User.create({username: username, password: hshed_pwd});
+        req.session.user = username;
+
         const dbs = createUserInventory(username);
         const invent = defineInventory(dbs);
 
@@ -58,15 +60,22 @@ router.post("/signup", async(req,res) => {
         
         const fileName1 = path.join(__dirname, '..', `/inventory_history/restocks/${username}_tracker.txt`);
         const fileName2 = path.join(__dirname, '..', `/inventory_history/sales/${username}_tracker.txt`);
+        const fileName3 = path.join(__dirname, '..', `/inventory_history/remitems/${username}_tracker.txt`);
         const date = new Date();
-        const data = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tAction\t\t\t\tTime\t\t\t\tRefID\n-----------------------------------------------------------------\n`;    
+        const data = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tAction\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;    
         fs.appendFile(fileName1, 'Created Restocks Tracker' + data, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }
         });
-        const data1 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tSold\t\t\t\tEarnings\t\t\t\tTime\t\t\t\tRefID\n-----------------------------------------------------------------\n`;
+        const data1 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tSold\t\t\t\tEarnings\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;
         fs.appendFile(fileName2, 'Created Sales Tracker' + data1, (err) => {
+            if(err) {
+                return res.status(500).json({"message": "internal server error"});
+            }
+        });
+        const data2 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;
+        fs.appendFile(fileName3, 'Created Remove of Items Tracker' + data2, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }
