@@ -4,10 +4,13 @@ const {Sequelize, DataTypes} = require('sequelize');
 const path = require('path');
 const {defineInventory} = require(path.join(__dirname, '..', '/middleware/model.js'));
 const bcrypt = require('bcrypt');
+const {v4: uuidv4} = require('uuid');
+const fs = require('fs');
+const {format} = require('date-fns');
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './users.db',
+    storage: './databases/users.db',
     logging: false
 });
 
@@ -52,7 +55,22 @@ router.post("/signup", async(req,res) => {
 
         await dbs.authenticate();
         await invent.sync({force: true});
-
+        
+        const fileName1 = path.join(__dirname, '..', `/inventory_history/restocks/${username}_tracker.txt`);
+        const fileName2 = path.join(__dirname, '..', `/inventory_history/sales/${username}_tracker.txt`);
+        const date = new Date();
+        const data = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tAction\t\t\t\tTime\t\t\t\tRefID\n-----------------------------------------------------------------\n`;    
+        fs.appendFile(fileName1, 'Created Restocks Tracker' + data, (err) => {
+            if(err) {
+                return res.status(500).json({"message": "internal server error"});
+            }
+        });
+        const data1 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tSold\t\t\t\tEarnings\t\t\t\tTime\t\t\t\tRefID\n-----------------------------------------------------------------\n`;
+        fs.appendFile(fileName2, 'Created Sales Tracker' + data1, (err) => {
+            if(err) {
+                return res.status(500).json({"message": "internal server error"});
+            }
+        });
         return res.status(201).json({"success": "created"});
       
     }

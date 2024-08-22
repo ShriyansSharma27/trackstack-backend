@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 
 const defineInventory = (sequelize) => {
     return sequelize.define('Inventory', {     
-        name: DataTypes.STRING,
+        item: DataTypes.STRING,
         desc: DataTypes.STRING,
         price: DataTypes.DECIMAL,
         SKU: DataTypes.STRING,
