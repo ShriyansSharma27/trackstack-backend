@@ -75,7 +75,7 @@ router.post("/signup", async(req,res) => {
             }
         });
         const data2 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;
-        fs.appendFile(fileName3, 'Created Remove of Items Tracker' + data2, (err) => {
+        fs.appendFile(fileName3, 'Created Removal of Items Tracker' + data2, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }

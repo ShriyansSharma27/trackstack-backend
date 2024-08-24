@@ -4,7 +4,7 @@ const app = express();
 const port = process.env.PORT || 6000;
 const crypto = require('crypto');
 const session = require('express-session');
-const {authenticate} = require(path.join(__dirname, 'middleware', 'auth.js'));
+const {authenticate} = require(path.join(__dirname, 'middleware', 'auth.js')); //persistence of the cookie
 const cors = require('cors');
 
 app.use(express.json());

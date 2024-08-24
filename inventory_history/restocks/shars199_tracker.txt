@@ -1,0 +1,5 @@
+Created Restocks Tracker	08/24/2024 14:43	df42cd19-44a7-4e6a-b1e3-0ef83b15f90b
+
+Item				Action				Time				RefID
+--------------------------------------------------------------------------------------------------------
+Sample Item		Stocked 10 units		08/24/2024 14:43		2a354491-879d-4580-9e33-9afa53af78ea
