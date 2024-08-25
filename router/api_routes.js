@@ -11,9 +11,7 @@ const date = new Date();
 
 router.get("/api/grab/db/:user", async(req,res) => {
     try {
-        const connect_to_db = await connectDb(req);
-        const Inventory = defineInventory(connect_to_db);
-        await Inventory.sync();
+        const Inventory = defineInventory(await connectDb(req));
         const data = await Inventory.findAll();
         return res.json(data);
     }
@@ -170,8 +168,6 @@ router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
         console.log('Unable to connect to database: ' + err.message);
     }
 }) //static reorder points
-
-
 
 //pdf/csv files generator
 router.get("/api/inventory/data/:user", async(req,res) => {

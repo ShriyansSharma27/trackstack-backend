@@ -58,6 +58,7 @@ router.post("/signup", async(req,res) => {
         await dbs.authenticate();
         await invent.sync({force: true});
         
+        
         const fileName1 = path.join(__dirname, '..', `/inventory_history/restocks/${username}_tracker.txt`);
         const fileName2 = path.join(__dirname, '..', `/inventory_history/sales/${username}_tracker.txt`);
         const fileName3 = path.join(__dirname, '..', `/inventory_history/remitems/${username}_tracker.txt`);
@@ -80,6 +81,7 @@ router.post("/signup", async(req,res) => {
                 return res.status(500).json({"message": "internal server error"});
             }
         });
+        
         return res.status(201).json({"success": "created"});
       
     }

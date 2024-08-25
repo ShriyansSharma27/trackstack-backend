@@ -1,5 +1,0 @@
-Created Restocks Tracker	08/25/2024 14:25	b3ab0abb-f690-4368-a96a-5de4950b97f0
-
-Item				Action				Time				RefID
---------------------------------------------------------------------------------------------------------
-Wireless Mouse		Stocked 150 units		08/25/2024 13:55		ed2158aa-b230-4e6b-a108-95c638a975d0

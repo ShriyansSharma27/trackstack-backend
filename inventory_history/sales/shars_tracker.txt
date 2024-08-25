@@ -1,4 +1,4 @@
-Created Sales Tracker	08/25/2024 13:41	0a160c08-a9a8-4d56-807e-35247e4b3d5a
+Created Sales Tracker	08/25/2024 20:53	23aac953-0ca0-4c74-b32d-e0b3f16a4b14
 
 Item				Sold				Earnings				Time				RefID
 --------------------------------------------------------------------------------------------------------
