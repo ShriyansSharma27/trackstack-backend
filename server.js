@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = process.env.PORT || 6000;
+const port = process.env.PORT || 4000;
 const crypto = require('crypto');
 const session = require('express-session');
 const {authenticate} = require(path.join(__dirname, 'middleware', 'auth.js')); //persistence of the cookie

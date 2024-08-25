@@ -9,6 +9,19 @@ const {Parser} = require('json2csv');
 const { format } = require('date-fns');
 const date = new Date();
 
+router.get("/api/grab/db/:user", async(req,res) => {
+    try {
+        const connect_to_db = await connectDb(req);
+        const Inventory = defineInventory(connect_to_db);
+        await Inventory.sync();
+        const data = await Inventory.findAll();
+        return res.json(data);
+    }
+    catch (err) {
+        console.log('Unable to connect to database: ' + err.message);
+    }
+})
+
 router.get("/api/grab/item/:user", async (req, res) => {
     try {
         const connect_to_db = await connectDb(req);
@@ -158,9 +171,6 @@ router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
     }
 }) //static reorder points
 
-router.get("/api/reorder/auto/:user", async(req,res) => {
-    
-})
 
 
 //pdf/csv files generator
@@ -176,7 +186,6 @@ router.get("/api/inventory/data/:user", async(req,res) => {
     res.attachment('inventory.csv');
     res.send(csv);
 })  
-
 
 router.get("/api/restocks/gen/:user", async (req, res) => {
     const filename = path.join(__dirname, '..', `/inventory_history/restocks/${req.params.user}_tracker.txt`);
