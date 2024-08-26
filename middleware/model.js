@@ -14,7 +14,8 @@ const defineInventory = (sequelize) => {
 const connectDb = async(req) => {
     const connect_to_db = new Sequelize({
         dialect: 'sqlite',
-        storage: path.join(__dirname, '..', `/databases/${req.params.user}.db`)
+        storage: path.join(__dirname, '..', `/databases/${req.params.user}.db`),
+        logging: false
     });
     await connect_to_db.authenticate();
     return connect_to_db;
