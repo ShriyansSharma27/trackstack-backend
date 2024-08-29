@@ -20,6 +20,10 @@ router.get("/api/grab/db/:user", async(req,res) => {
     }
 })
 
+router.post("/api/read/csv/:user", async(req,res) => {
+    
+})
+
 router.get("/api/grab/item/:user", async (req, res) => {
     try {
         const connect_to_db = await connectDb(req);
@@ -27,13 +31,13 @@ router.get("/api/grab/item/:user", async (req, res) => {
         await Inventory.sync();
         const find_item = await Inventory.findOne({
             where: {
-                SKU: req.body.SKU
+                SKU: req.query.SKU
             },
         });
         if (!find_item) {
             return res.status(200).json({ "message": "no such item found" });
         }
-        res.status(200).json({ "success": "found item", "item": JSON.stringify(find_item) });
+        res.status(200).json({"item": find_item });
     }
     catch (err) {
         console.log('Unable to connect to database: ' + err.message);
@@ -61,7 +65,7 @@ router.post("/api/add/item/:user", async (req, res) => {
 
 router.delete("/api/remove/item/:user", async (req, res) => {
     const filename = path.join(__dirname, '..', `/inventory_history/remitems/${req.params.user}_tracker.txt`);
-
+    console.log(req.body.SKU);
     try {
         const Inventory = defineInventory(await connectDb(req));
         const data = `${req.body.item}\t\t${format(date, 'MM/dd/yyyy HH:mm')}\t\t${uuidv4()}\n`;
@@ -72,7 +76,7 @@ router.delete("/api/remove/item/:user", async (req, res) => {
         })
         await Inventory.destroy({
             where: {
-                SKU: req.body.SKU,
+                SKU: req.query.SKU,
             },
         });
         res.status(200).json({ "success": "deleted item" });
@@ -89,7 +93,7 @@ router.put("/api/modify/item/:user", async (req, res) => {
             req.body,
             {
                 where: {
-                    SKU: req.body.SKU,
+                    SKU: req.body.oldSKU,
                 }
             }
         )
@@ -160,9 +164,9 @@ router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
         });
         const extract = find_items.map(({item, SKU, stock}) => ({item, SKU, stock}));
         if (find_items.length > 0) { 
-            return res.status(200).json({ "items low": extract});
+            return res.status(200).json({ "low": extract});
         }
-        res.status(200).json({ "items low": "none" });
+        res.status(200).json({ "low": "none" });
     }
     catch (err) {
         console.log('Unable to connect to database: ' + err.message);
