@@ -5,29 +5,46 @@ const path = require('path');
 const { defineInventory, connectDb } = require(path.join(__dirname, '..', '/middleware/model.js'));
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const {Parser} = require('json2csv');
+const { Parser } = require('json2csv');
 const { format } = require('date-fns');
+const fastcsv = require('fast-csv');
 const date = new Date();
 
-router.get("/api/grab/db/:user", async(req,res) => {
+router.get("/api/grab/db/:user", async (req, res) => {
     try {
         const Inventory = defineInventory(await connectDb(req));
         const data = await Inventory.findAll();
         return res.json(data);
     }
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
-router.post("/api/read/csv/:user", async(req,res) => {
-    
+router.post("/api/read/csv/:user", async (req, res) => {
+    try {
+        const Inventory = defineInventory(await connectDb(req));
+        fs.createReadStream(req.file)
+            .pipe(fastcsv.parse({ headers: true }))
+            .on('data', async (row) => {
+                await Inventory.create(row);
+            })
+            .on('end', () => {
+                return res.status(200).json({ "success": "parsed csv file" });
+            })
+            .on('error', (err) => {
+                console.error('Error while parsing the CSV file:', err.message);
+                return res.status(500).json({ error: "Failed to parse CSV file" });
+            });
+    }
+    catch (err) {
+        return res.status(500).json({ error: "Database connection failed" });
+    }
 })
 
 router.get("/api/grab/item/:user", async (req, res) => {
     try {
-        const connect_to_db = await connectDb(req);
-        const Inventory = defineInventory(connect_to_db);
+        const Inventory = defineInventory(await connectDb(req));
         await Inventory.sync();
         const find_item = await Inventory.findOne({
             where: {
@@ -37,10 +54,10 @@ router.get("/api/grab/item/:user", async (req, res) => {
         if (!find_item) {
             return res.status(200).json({ "message": "no such item found" });
         }
-        res.status(200).json({"item": find_item });
+        res.status(200).json({ "item": find_item });
     }
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
@@ -59,7 +76,7 @@ router.post("/api/add/item/:user", async (req, res) => {
         return res.status(200).json({ "success": "added item" });
     }
     catch (err) {
-        console.log(err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
@@ -82,7 +99,7 @@ router.delete("/api/remove/item/:user", async (req, res) => {
         res.status(200).json({ "success": "deleted item" });
     }
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
@@ -100,7 +117,7 @@ router.put("/api/modify/item/:user", async (req, res) => {
         res.status(200).json({ "success": "modified item" });
     }
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
@@ -147,14 +164,14 @@ router.put("/api/update/stock/:user", async (req, res) => {
     }
 
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 })
 
 router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
     try {
         const Inventory = defineInventory(await connectDb(req));
-        
+
         const find_items = await Inventory.findAll({
             where: {
                 stock: {
@@ -162,30 +179,30 @@ router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
                 },
             },
         });
-        const extract = find_items.map(({item, SKU, stock}) => ({item, SKU, stock}));
-        if (find_items.length > 0) { 
-            return res.status(200).json({ "low": extract});
+        const extract = find_items.map(({ item, SKU, stock }) => ({ item, SKU, stock }));
+        if (find_items.length > 0) {
+            return res.status(200).json({ "low": extract });
         }
         res.status(200).json({ "low": "none" });
     }
     catch (err) {
-        console.log('Unable to connect to database: ' + err.message);
+        return res.status(500).json({ error: "Database connection failed" });
     }
 }) //static reorder points
 
 //pdf/csv files generator
-router.get("/api/inventory/data/:user", async(req,res) => {
+router.get("/api/inventory/data/:user", async (req, res) => {
     const Inventory = defineInventory(await connectDb(req));
     const grab_data = await Inventory.findAll({
         attributes: ['item', 'desc', 'SKU', 'stock', 'price']
     });
     const json2csvParser = new Parser();
     const csv = json2csvParser.parse(grab_data);
-    
+
     res.header('Content-Type', 'text/csv');
     res.attachment('inventory.csv');
     res.send(csv);
-})  
+})
 
 router.get("/api/restocks/gen/:user", async (req, res) => {
     const filename = path.join(__dirname, '..', `/inventory_history/restocks/${req.params.user}_tracker.txt`);
@@ -228,5 +245,5 @@ router.get("/api/removed/gen/:user", async (req, res) => {
         res.send(data);
     });
 })
-    
+
 module.exports = router;
