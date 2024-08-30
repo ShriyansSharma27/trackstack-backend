@@ -37,7 +37,9 @@ function createUserInventory(username) {
 }
 
 router.post("/signup", async(req,res) => {
-    const {username, password} = req.body;
+    let {username, password} = req.body;
+    username = username.toLowerCase();
+    username = username.slice(0, username.indexOf("@"));
     const find_dups = await User.findAll({
         where: {
             username: username,
@@ -59,29 +61,31 @@ router.post("/signup", async(req,res) => {
         await invent.sync({force: true});
         
         
-        const fileName1 = path.join(__dirname, '..', `/inventory_history/restocks/${username}_tracker.txt`);
-        const fileName2 = path.join(__dirname, '..', `/inventory_history/sales/${username}_tracker.txt`);
-        const fileName3 = path.join(__dirname, '..', `/inventory_history/remitems/${username}_tracker.txt`);
+        const fileName1 = path.join(__dirname, '..', `/inventory_history/restocks/${username}_tracker.csv`);
+        const fileName2 = path.join(__dirname, '..', `/inventory_history/sales/${username}_tracker.csv`);
+        const fileName3 = path.join(__dirname, '..', `/inventory_history/remitems/${username}_tracker.csv`);
         const date = new Date();
-        const data = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tAction\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;    
-        fs.appendFile(fileName1, 'Created Restocks Tracker' + data, (err) => {
-            if(err) {
-                return res.status(500).json({"message": "internal server error"});
-            }
-        });
-        const data1 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tSold\t\t\t\tEarnings\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;
-        fs.appendFile(fileName2, 'Created Sales Tracker' + data1, (err) => {
-            if(err) {
-                return res.status(500).json({"message": "internal server error"});
-            }
-        });
-        const data2 = `\t${format(date, 'MM/dd/yyyy HH:mm')}\t${uuidv4()}\n\nItem\t\t\t\tTime\t\t\t\tRefID\n--------------------------------------------------------------------------------------------------------\n`;
-        fs.appendFile(fileName3, 'Created Removal of Items Tracker' + data2, (err) => {
+
+        const data_1 = `SKU, Action, Time, REFID`;
+        fs.appendFile(fileName1, data_1, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }
         });
         
+        const data_2 = `SKU,Sold,Monetary Sales,Time,RefID`;
+        fs.appendFile(fileName2, data_2, (err) => {
+            if(err) {
+                return res.status(500).json({"message": "internal server error"});
+            }
+        });
+        const data_3 = `SKU,Time,RefID`;
+        fs.appendFile(fileName3, data_3, (err) => {
+            if(err) {
+                return res.status(500).json({"message": "internal server error"});
+            }
+        });
+
         return res.status(201).json({"success": "created"});
       
     }
@@ -91,7 +95,9 @@ router.post("/signup", async(req,res) => {
 })
 
 router.post("/login", async(req,res) => {
-    const {username, password} = req.body;
+    let  {username, password} = req.body;
+    username = username.toLowerCase();
+    username = username.slice(0, username.indexOf("@"));
     const find_user = await User.findOne({
         where: {
             username: username
