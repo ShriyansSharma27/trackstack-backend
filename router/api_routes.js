@@ -1,15 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
 const path = require('path');
-const { defineInventory, connectDb } = require(path.join(__dirname, '..', '/middleware/model.js'));
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
-const {jsPDF} = require('jspdf');
-const { Parser } = require('json2csv');
 const { format } = require('date-fns');
-const fastcsv = require('fast-csv');
-const date = new Date();
+const { Parser } = require('json2csv');
+
+const { defineInventory, connectDb } = require(path.join(__dirname, '..', '/middleware/model.js'))
+const { Op } = require('sequelize');
+
 
 router.get("/api/grab/db/:user", async (req, res) => {
     try {
@@ -20,7 +19,7 @@ router.get("/api/grab/db/:user", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: "Internal Server Error" });
     }
-})
+}) //read the database using user params and send back data
 
 router.post("/api/read/csv/:user", async (req, res) => {
     try {
@@ -41,7 +40,7 @@ router.post("/api/read/csv/:user", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: "Internal Server Error" });
     }
-})
+}) //read a csv file to store the contents in inventory
 
 router.get("/api/grab/item/:user", async (req, res) => {
     try {
@@ -60,7 +59,7 @@ router.get("/api/grab/item/:user", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: "Internal Server Error" });
     }
-})
+}) //grab an item using SKU
 
 router.post("/api/add/item/:user", async (req, res) => {
     const filename = path.join(__dirname, '..', `/inventory_history/restocks/${req.params.user}_tracker.csv`);
@@ -89,7 +88,7 @@ router.post("/api/add/item/:user", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: "Internal Server Error"});
     }
-})
+}) //add item to Inventory
 
 router.delete("/api/remove/item/:user/:SKU", async (req, res) => {
     const filename = path.join(__dirname, '..', `/inventory_history/remitems/${req.params.user}_tracker.csv`);
@@ -116,7 +115,7 @@ router.delete("/api/remove/item/:user/:SKU", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: err.message });
     }
-})
+}) //remove item from inventory
 
 router.put("/api/modify/item/:user", async (req, res) => {
     try {
@@ -134,7 +133,7 @@ router.put("/api/modify/item/:user", async (req, res) => {
     catch (err) {
         return res.status(500).json({ error: "Database connection failed" });
     }
-})
+}) //modify an item in inventory
 
 router.put("/api/update/stock/:user", async (req, res) => {
     try {
@@ -154,7 +153,7 @@ router.put("/api/update/stock/:user", async (req, res) => {
             }
         );
 
-        const sold = itm.stock - req.body.stock;
+        const sold = itm.stock -  req.body.stock;
         let data;
         if (sold > 0) {
             const val_sold = sold * itm.price;
@@ -170,8 +169,8 @@ router.put("/api/update/stock/:user", async (req, res) => {
         else {
             const filename = path.join(__dirname, '..', `/inventory_history/restocks/${req.params.user}_tracker.csv`);
             const date = new Date();
-            data = `${itm.item},Restocked ${req.body.stock} units,${format(date, 'MM/dd/yyyy HH:mm')},${uuidv4()}`,
-            fs.appendFile(filename,  err => {
+            data = `${itm.item},Restocked ${sold} units,${format(date, 'MM/dd/yyyy HH:mm')},${uuidv4()}`,
+            fs.appendFile(filename,  data, err => {
                 if (err) {
                     return res.status(500).json({ "message": "Internal Server Error" });
                 }
@@ -182,9 +181,9 @@ router.put("/api/update/stock/:user", async (req, res) => {
     }
 
     catch (err) {
-        return res.status(500).json({ error: "Database connection failed" });
+        return res.status(500).json({ error: err.message });
     }
-})
+}) //sales or restocks are calculated and stored in respective csv files
 
 router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
     try {
