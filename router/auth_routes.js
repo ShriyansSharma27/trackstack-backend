@@ -66,20 +66,20 @@ router.post("/signup", async(req,res) => {
         const fileName3 = path.join(__dirname, '..', `/inventory_history/remitems/${username}_tracker.csv`);
         const date = new Date();
 
-        const data_1 = `SKU, Action, Time, REFID`;
+        const data_1 = `SKU, Action, Time, REFID\n`;
         fs.appendFile(fileName1, data_1, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }
         });
         
-        const data_2 = `SKU,Sold,Monetary Sales,Time,RefID`;
+        const data_2 = `SKU,Sold,Monetary Sales,Time,RefID\n`;
         fs.appendFile(fileName2, data_2, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});
             }
         });
-        const data_3 = `SKU,Time,RefID`;
+        const data_3 = `SKU,Time,RefID\n`;
         fs.appendFile(fileName3, data_3, (err) => {
             if(err) {
                 return res.status(500).json({"message": "internal server error"});

@@ -5,9 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const { format } = require('date-fns');
 const { Parser } = require('json2csv');
-
+const fastcsv = require('fast-csv');
 const { defineInventory, connectDb } = require(path.join(__dirname, '..', '/middleware/model.js'))
 const { Op } = require('sequelize');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({storage});
 
 
 router.get("/api/grab/db/:user", async (req, res) => {
@@ -17,47 +20,51 @@ router.get("/api/grab/db/:user", async (req, res) => {
         return res.json(data);
     }
     catch (err) {
-        return res.status(500).json({ error: "Internal Server Error" });
+        return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //read the database using user params and send back data
 
-router.post("/api/read/csv/:user", async (req, res) => {
+router.post("/api/read/csv/:user", upload.single('file'), async (req, res) => {
     try {
         const Inventory = defineInventory(await connectDb(req));
-        fs.createReadStream(req.file)
+
+        if (!req.file) {
+            return res.status(400).json({ "message": "No file uploaded" });
+        }
+
+        const bufferStream = require('stream').Readable.from(req.file.buffer);
+
+        bufferStream
             .pipe(fastcsv.parse({ headers: true }))
             .on('data', async (row) => {
                 await Inventory.create(row);
             })
             .on('end', () => {
-                return res.status(200).json({ "success": "parsed csv file" });
+                return res.status(200).json({ "success": "Parsed CSV file" });
             })
             .on('error', (err) => {
                 console.error('Error while parsing the CSV file:', err.message);
-                return res.status(500).json({ error: "Failed to parse CSV file" });
+                return res.status(500).json({ "message": "Failed to parse CSV file" });
             });
     }
     catch (err) {
-        return res.status(500).json({ error: "Internal Server Error" });
+        return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //read a csv file to store the contents in inventory
 
-router.get("/api/grab/item/:user", async (req, res) => {
+router.get("/api/grab/item/:user/:SKU", async (req, res) => {
     try {
         const Inventory = defineInventory(await connectDb(req));
         await Inventory.sync();
         const find_item = await Inventory.findOne({
             where: {
-                SKU: req.query.SKU
+                SKU: req.params.SKU
             },
         });
-        if (!find_item) {
-            return res.status(200).json({ "message": "no such item found" });
-        }
         res.status(200).json({ "item": find_item });
     }
     catch (err) {
-        return res.status(500).json({ error: "Internal Server Error" });
+        return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //grab an item using SKU
 
@@ -86,7 +93,8 @@ router.post("/api/add/item/:user", async (req, res) => {
         return res.status(200).json({ "success": "added item" });
     }   
     catch (err) {
-        return res.status(500).json({ error: "Internal Server Error"});
+        console.log(err.message);
+        return res.status(500).json({ "message": "Internal Server Error"});
     }
 }) //add item to Inventory
 
@@ -97,9 +105,15 @@ router.delete("/api/remove/item/:user/:SKU", async (req, res) => {
         let date = new Date();
         date = `${format(date, 'MM/dd/yyyy HH:mm')}`;
         const gen_uuid = uuidv4();
-        console.log(req.params.SKU);
-        const data = `${req.params.SKU},${date},${gen_uuid}`;
-
+        const data = `${req.params.SKU},${date},${gen_uuid}\n`;
+        const check_itm = await Inventory.findOne({
+            where: {
+                SKU: req.params.SKU
+            }
+        })
+        if(!check_itm) {
+            return res.status(404).json({"message": "Item does not exist"});
+        }
         fs.appendFile(filename, data, function (err) {
             if (err) {
                 return res.status(500).json({ "message": "Internal Server Error" });
@@ -113,13 +127,21 @@ router.delete("/api/remove/item/:user/:SKU", async (req, res) => {
         res.status(200).json({ "success": "deleted item" });
     }
     catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 }) //remove item from inventory
 
 router.put("/api/modify/item/:user", async (req, res) => {
     try {
         const Inventory = defineInventory(await connectDb(req));
+        const check_itm = await Inventory.findOne({
+            where: {
+                SKU: req.body.oldSKU
+            }
+        })
+        if(!check_itm) {
+            return res.status(404).json({"message": "Item does not exist"});
+        }
         await Inventory.update(
             req.body,
             {
@@ -128,10 +150,11 @@ router.put("/api/modify/item/:user", async (req, res) => {
                 }
             }
         )
-        res.status(200).json({ "success": "modified item" });
+        return res.status(200).json({ "success": "modified item" });
     }
     catch (err) {
-        return res.status(500).json({ error: "Database connection failed" });
+        console.log(err.message);
+        return res.status(500).json({ error: "Internal Server Error"});
     }
 }) //modify an item in inventory
 
@@ -143,6 +166,9 @@ router.put("/api/update/stock/:user", async (req, res) => {
                 SKU: req.body.SKU,
             }
         })
+        if(!itm) {
+            return res.status(404).json({"message": "item not found"});
+        }
 
         await Inventory.update(
             { stock: req.body.stock },
@@ -159,7 +185,7 @@ router.put("/api/update/stock/:user", async (req, res) => {
             const val_sold = sold * itm.price;
             const filename = path.join(__dirname, '..', `/inventory_history/sales/${req.params.user}_tracker.csv`);
             const date = new Date();
-            data = `${itm.item},Sold ${sold} units,Monetary sales of ${val_sold}, ${format(date, 'MM/dd/yyyy HH:mm')}, ${uuidv4()}`;
+            data = `${itm.item},Sold ${sold} units,Monetary sales of ${val_sold}, ${format(date, 'MM/dd/yyyy HH:mm')}, ${uuidv4()}\n`;
             fs.appendFile(filename, data, err => {
                 if (err) {
                     return res.status(500).json({ "message": "Internal Server Error" });
@@ -169,7 +195,7 @@ router.put("/api/update/stock/:user", async (req, res) => {
         else {
             const filename = path.join(__dirname, '..', `/inventory_history/restocks/${req.params.user}_tracker.csv`);
             const date = new Date();
-            data = `${itm.item},Restocked ${sold} units,${format(date, 'MM/dd/yyyy HH:mm')},${uuidv4()}`,
+            data = `${itm.item},Restocked ${-(sold)} units,${format(date, 'MM/dd/yyyy HH:mm')},${uuidv4()}\n`,
             fs.appendFile(filename,  data, err => {
                 if (err) {
                     return res.status(500).json({ "message": "Internal Server Error" });
@@ -181,7 +207,7 @@ router.put("/api/update/stock/:user", async (req, res) => {
     }
 
     catch (err) {
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //sales or restocks are calculated and stored in respective csv files
 
@@ -203,7 +229,7 @@ router.get("/api/check/low/:user/:lowlimit", async (req, res) => {
         res.status(200).json({ "low": "none" });
     }
     catch (err) {
-        return res.status(500).json({ error: "Database connection failed" });
+        return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //static reorder points
 
