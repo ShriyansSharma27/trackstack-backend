@@ -197,7 +197,7 @@ router.put("/api/update/stock/:user", async (req, res) => {
         const sold = itm.stock - req.body.stock;
         let data;
         if (sold > 0) {
-            const val_sold = sold * itm.price;
+            const val_sold = (sold * itm.price).toFixed(2);
             const filename = path.join(__dirname, '..', `/inventory_history/sales/${req.params.user}_tracker.csv`);
             const date = new Date();
             data = `${itm.item},Sold ${sold} units,Monetary sales of ${val_sold}, ${format(date, 'MM/dd/yyyy HH:mm')}, ${uuidv4()}\n`;
