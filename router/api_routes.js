@@ -108,7 +108,6 @@ router.post("/api/add/item/:user", async (req, res) => {
         return res.status(200).json({ "success": "added item" });
     }
     catch (err) {
-        console.log(err.message);
         return res.status(500).json({ "message": "Internal Server Error" });
     }
 }) //add item to Inventory
@@ -168,7 +167,6 @@ router.put("/api/modify/item/:user", async (req, res) => {
         return res.status(200).json({ "success": "modified item" });
     }
     catch (err) {
-        console.log(err.message);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }) //modify an item in inventory
