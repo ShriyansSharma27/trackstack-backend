@@ -9,7 +9,7 @@ const defineInventory = (sequelize) => {
         SKU: DataTypes.STRING,
         stock: DataTypes.INTEGER
     });
-}
+} //return the table definition
 
 const connectDb = async(req) => {
     const connect_to_db = new Sequelize({
@@ -19,6 +19,6 @@ const connectDb = async(req) => {
     });
     await connect_to_db.authenticate();
     return connect_to_db;
-}
+} //connect to the database of the user
 
 module.exports = {defineInventory, connectDb};

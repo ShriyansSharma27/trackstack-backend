@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4000; //port 
 const crypto = require('crypto');
 const session = require('express-session');
 const {authenticate} = require(path.join(__dirname, 'middleware', 'auth.js')); //persistence of the cookie
@@ -21,10 +21,13 @@ app.use(session({
         secure: false,
         sameSite: 'lax',
     }
-}));
+})); 
+//session to allow user authentication persistence throughout session
 
 app.use("/", require(path.join(__dirname, 'router', 'auth_routes.js')));
+
 app.use("/", authenticate, require(path.join(__dirname, 'router', 'api_routes.js')));
+//website endpoints are protected using session
     
 
 app.listen(port, () => {console.log(`Listening...`)});
